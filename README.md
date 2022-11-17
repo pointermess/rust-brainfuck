@@ -22,7 +22,7 @@ fn main() {
     print!("\x1B[2J");
 
     // run and print state after program has finished
-    // running (or stepping) will immediately
+    // running (or stepping) will immediately print any "." operations
     bf.run();
     
     // prints the cpu and memory state
