@@ -2,6 +2,9 @@
 
 A simple brainfuck interpreter written in Rust as a fun learning project. :)
 
+| ⚠ | Operator ',' (Key Input) not implemented yet |
+|---|---|
+
 **Example usage**
 
 ```rust
