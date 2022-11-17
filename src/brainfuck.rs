@@ -11,7 +11,7 @@ enum Operation {
 }
 
 impl Operation {
-    fn from_char(command : &char) -> Operation {
+    fn from_char(command : char) -> Operation {
         match command {
             '<' => Operation::MoveLeft,
             '>' => Operation::MoveRight,
@@ -70,7 +70,7 @@ impl Interpreter {
 
         // gets current character/operation and executes it.
         let ch = self.program_code[self.program_counter];
-        match Operation::from_char(&ch) {
+        match Operation::from_char(ch) {
             Operation::MoveLeft => self.move_left(),
             Operation::MoveRight => self.move_right(),
             Operation::Increment => self.increment(),
@@ -159,10 +159,8 @@ impl Interpreter {
         if self.memory[self.memory_pointer] != 0 {
             let item : &usize = &self.loops[self.loops.len() - 1];
             self.program_counter = *item;
-        } else {
-            if self.loops.len() > 0 {
-                self.loops.pop();
-            }
+        } else if !self.loops.is_empty() {
+            self.loops.pop();
         }
     }
 
@@ -179,9 +177,9 @@ impl Interpreter {
         // todo: handle multiple lines for bigger programs
         let mut str : String = "".to_owned();
         for _index in 0..self.program_counter  {
-            str.push_str(" ");
+            str.push(' ');
         }
-        str.push_str("^");
+        str.push('^');
         println!("              {}", str);
 
 
@@ -194,12 +192,12 @@ impl Interpreter {
             print!("{:02x} ", byte);
 
             if c % 16 == 0 {
-                println!("");
+                println!();
             }
             c += 1;
         }
 
-        println!("");
+        println!();
     }
 
 }
