@@ -26,141 +26,180 @@ impl Operation {
     }
 }
 
-// Memory
-
-pub trait HandleMemory {
-    fn move_left(&mut self);
-    fn move_right(&mut self);
-
-    fn decrement(&mut self);
-    fn increment(&mut self);
-
-    fn read(&self) -> u8;
-}
-
-pub struct Memory {
+pub struct Interpreter {
     memory_pointer : usize,
     memory : Vec<u8>,
-}
-
-impl Memory {
-    pub fn new(memory_size : i32) -> Memory {
-        let mut vector : Vec<i32> = Vec::new();
-
-        for _i in [0..memory_size] {
-            vector.push(0);
-        }
-
-        Memory { 
-            memory_pointer: 0,
-            memory: vec![0, 255],
-        }
-    }
-}
-
-// todo check bounds
-impl HandleMemory for Memory {
-    fn move_left(&mut self) {
-        if self.memory_pointer > 0 {
-            self.memory_pointer -= 1;
-        }
-    }
-
-    fn move_right(&mut self) {
-        self.memory_pointer += 1;
-    }
-
-    fn decrement(&mut self) {
-        self.memory[self.memory_pointer] -= 1;
-    }
-
-    fn increment(&mut self) {
-        self.memory[self.memory_pointer] += 1;
-    }
-
-    fn read(&self) -> u8 {
-        return self.memory[self.memory_pointer];
-    }
-}
-
-pub trait HandleProgram {
-    fn load_program(&mut self, program : &str);
-
-    fn step(&mut self) -> bool;
-
-    fn run(&mut self);
-
-    fn print_state(&self);
-}
-
-pub struct Interpreter {
-    memory : Memory,
 
     program_counter : usize,
-    program_code : Vec<char>
+    program_code : Vec<char>,
+
+    // stores program pointers of loop starts
+    loops : Vec<usize>
 }
 
 impl Interpreter {
-    pub fn new() -> Interpreter {
+    pub fn new(memory_size : i32) -> Interpreter {
+        // ??? replaceable by vec![x,y] (?) but x and y need both to be of type i8 ???
+        let mut vector : Vec<u8> = Vec::new();
+        for _i in 0..memory_size {
+            vector.push(0);
+        }
+
         Interpreter {
-            memory: Memory::new(4096),
+            memory_pointer: 0,
+            memory: vector,
 
             program_counter: 0,
             program_code: Vec::new(),
+
+            loops: Vec::new(),
         }
     }
-    
-    pub fn get_memory(&mut self) -> &mut Memory {
-        return &mut self.memory;
-    }
 
-
-}
-
-impl HandleProgram for Interpreter {
-    fn load_program(&mut self, program : &str) {
+    // load a string into the memory vector
+    pub fn load_program(&mut self, program : &str) {
         self.program_code = program.chars().collect();
     }
 
+    // makes one step and returns if the end has been reached
     fn step(&mut self) -> bool {
+        // immediately return with false if program has reached end
         if self.program_counter >= self.program_code.len() {
             return false;
         }
 
+        // gets current character/operation and executes it.
         let ch = self.program_code[self.program_counter];
-
-        println!("Running operation: {}", ch);
-
-        // todo implement operations
         match Operation::from_char(&ch) {
-            Operation::MoveLeft => self.memory.move_left(),
-            Operation::MoveRight => self.memory.move_right(),
-            Operation::Increment => self.memory.increment(),
-            Operation::Decrement => self.memory.decrement(),
-            Operation::ConsolePrint => {},
-            Operation::ConsoleRead => {},
-            Operation::OpenLoop => {},
-            Operation::CloseLoop => {},
+            Operation::MoveLeft => self.move_left(),
+            Operation::MoveRight => self.move_right(),
+            Operation::Increment => self.increment(),
+            Operation::Decrement => self.decrement(),
+            Operation::ConsolePrint => self.print(),
+            Operation::ConsoleRead => todo!(),
+            Operation::OpenLoop => self.open_loop(),
+            Operation::CloseLoop => self.close_loop(),
             Operation::Skip => {},
         }
 
         self.program_counter += 1;
-
         return true;
     }
+    
+    // moves the memory pointer to the left
+    fn move_left(&mut self) {
+        if self.memory_pointer > 0 {
+            self.memory_pointer -= 1;
+        } else {
+            self.memory_pointer = self.memory.len() - 1;
+        }
+    }
 
-    fn run(&mut self) {
+    // moves memory pointer to the right
+    fn move_right(&mut self) {
+        if self.memory_pointer < self.memory.len() {
+            self.memory_pointer += 1;
+        } else {
+            self.memory_pointer = 0;
+        }
+    }
+
+    // decrements memory memory value
+    fn decrement(&mut self) {
+        self.memory[self.memory_pointer] -= 1;
+    }
+
+    // increments current memory value
+    fn increment(&mut self) {
+        self.memory[self.memory_pointer] += 1;
+    }
+
+    // runs until the end has been reached
+    pub fn run(&mut self) {
         if self.step() {
             self.run();
         }
     }
 
-    fn print_state(&self) {
-        println!("---- STATE ----");
+    // prints character at current memory position
+    fn print(&mut self) {
+        print!("{}", char::from(self.memory[self.memory_pointer])); 
+    }
+
+    // handles open loop "["
+    fn open_loop(&mut self) {
+        // push new loop index
+        if self.memory[self.memory_pointer] != 0 {
+            self.loops.push(self.program_counter);
+        } else {
+            // skip loop
+            let mut loop_counter = 0;
+            
+            // loop from current index to end to find where to skip to - breaks out of loop when found
+            // todo: check if program is at end already ?
+            for index in self.program_counter..self.program_code.len() {
+                let ch = self.program_code[index];
+
+                match ch {
+                    '[' => loop_counter += 1,
+                    ']' => loop_counter -= 1,
+                    _ => {}
+                };
+
+                if loop_counter == 0 {
+                    self.program_counter = index;
+                    break;
+                }
+            }
+        }
+    }
+
+    // handles close loop "]"
+    fn close_loop(&mut self) {
+        if self.memory[self.memory_pointer] != 0 {
+            let item : &usize = &self.loops[self.loops.len() - 1];
+            self.program_counter = *item;
+        } else {
+            if self.loops.len() > 0 {
+                self.loops.pop();
+            }
+        }
+    }
+
+
+    // prints the cpu and memory state
+    pub fn print_state(&self) {
+        println!("\n---- CPU STATE ----");
 
         let code = self.program_code.iter().cloned().collect::<String>();
 
         println!("Program Code: {}", code);
-        println!("Program Counter: {}", self.program_counter);
+
+        // display arrow at current program counter
+        // todo: handle multiple lines for bigger programs
+        let mut str : String = "".to_owned();
+        for _index in 0..self.program_counter  {
+            str.push_str(" ");
+        }
+        str.push_str("^");
+        println!("              {}", str);
+
+
+        println!("Program Counter: {}\n", self.program_counter);
+
+        println!("---- MEM STATE ----");
+
+        let mut c = 1;
+        for byte in &self.memory {
+            print!("{:02x} ", byte);
+
+            if c % 16 == 0 {
+                println!("");
+            }
+            c += 1;
+        }
+
+        println!("");
     }
+
 }
