@@ -9,9 +9,8 @@ enum Operation {
     CloseLoop,
     Skip
 }
-
-impl Operation {
-    fn from_char(command : char) -> Operation {
+impl From<char> for Operation {
+    fn from(command : char) -> Self {
         match command {
             '<' => Operation::MoveLeft,
             '>' => Operation::MoveRight,
@@ -38,16 +37,10 @@ pub struct Interpreter {
 }
 
 impl Interpreter {
-    pub fn new(memory_size : i32) -> Interpreter {
-        // ??? replaceable by vec![x,y] (?) but x and y need both to be of type i8 ???
-        let mut vector : Vec<u8> = Vec::new();
-        for _i in 0..memory_size {
-            vector.push(0);
-        }
-
+    pub fn new(memory_size : usize) -> Interpreter {
         Interpreter {
             memory_pointer: 0,
-            memory: vector,
+            memory: vec![0; memory_size],
 
             program_counter: 0,
             program_code: Vec::new(),
@@ -70,7 +63,7 @@ impl Interpreter {
 
         // gets current character/operation and executes it.
         let ch = self.program_code[self.program_counter];
-        match Operation::from_char(ch) {
+        match Operation::from(ch) {
             Operation::MoveLeft => self.move_left(),
             Operation::MoveRight => self.move_right(),
             Operation::Increment => self.increment(),
@@ -83,7 +76,8 @@ impl Interpreter {
         }
 
         self.program_counter += 1;
-        return true;
+
+        true
     }
     
     // moves the memory pointer to the left
@@ -137,9 +131,7 @@ impl Interpreter {
             
             // loop from current index to end to find where to skip to - breaks out of loop when found
             // todo: check if program is at end already ?
-            for index in self.program_counter..self.program_code.len() {
-                let ch = self.program_code[index];
-
+            for (index, ch) in self.program_code.iter().enumerate().skip(self.program_counter) {
                 match ch {
                     '[' => loop_counter += 1,
                     ']' => loop_counter -= 1,
@@ -157,28 +149,24 @@ impl Interpreter {
     // handles close loop "]"
     fn close_loop(&mut self) {
         if self.memory[self.memory_pointer] != 0 {
-            let item : &usize = &self.loops[self.loops.len() - 1];
-            self.program_counter = *item;
+            let item = self.loops[self.loops.len() - 1];
+            self.program_counter = item;
         } else if !self.loops.is_empty() {
             self.loops.pop();
         }
     }
 
-
     // prints the cpu and memory state
     pub fn print_state(&self) {
         println!("\n---- CPU STATE ----");
 
-        let code = self.program_code.iter().cloned().collect::<String>();
+        let code = self.program_code.iter().collect::<String>();
 
         println!("Program Code: {}", code);
 
         // display arrow at current program counter
         // todo: handle multiple lines for bigger programs
-        let mut str : String = "".to_owned();
-        for _index in 0..self.program_counter  {
-            str.push(' ');
-        }
+        let mut str : String = " ".repeat(self.program_counter);
         str.push('^');
         println!("              {}", str);
 
