@@ -100,19 +100,17 @@ impl Interpreter {
 
     // decrements memory memory value
     fn decrement(&mut self) {
-        self.memory[self.memory_pointer] -= 1;
+        self.memory[self.memory_pointer] = self.memory[self.memory_pointer].wrapping_sub(1);
     }
 
     // increments current memory value
     fn increment(&mut self) {
-        self.memory[self.memory_pointer] += 1;
+        self.memory[self.memory_pointer] = self.memory[self.memory_pointer].wrapping_add(1);
     }
 
     // runs until the end has been reached
     pub fn run(&mut self) {
-        if self.step() {
-            self.run();
-        }
+        while self.step() {}
     }
 
     // prints character at current memory position
@@ -187,5 +185,55 @@ impl Interpreter {
 
         println!();
     }
+}
 
+#[cfg(test)]
+mod tests {
+    use crate::brainfuck::Interpreter;
+
+    // prepares the interpreter with a test program and
+    // returns the interpreter with an already executed program
+    fn prepare_executed_program(program_code : &str) -> Interpreter {
+        let mut interpreter = Interpreter::new(64);
+        interpreter.load_program(program_code);
+        interpreter.run();
+
+        interpreter
+    }
+
+    #[test]
+    fn addition() {
+        let result = prepare_executed_program("++++++++").memory[0];
+        assert_eq!(result, 8);
+    }
+
+    #[test]
+    fn subtraction() {
+        let result = prepare_executed_program("--------").memory[0];
+        assert_eq!(result, 0xf8);
+    }
+
+    #[test]
+    fn move_left() {
+        let result = prepare_executed_program(">>>>").memory_pointer;
+        assert_eq!(result, 4);
+    }
+
+    #[test]
+    fn move_right() {
+        let result = prepare_executed_program(">>>><<").memory_pointer;
+        assert_eq!(result, 2);
+    }
+
+    #[test]
+    fn looping() {
+        let result = prepare_executed_program("+++[>+++++<-]").memory[1];
+        assert_eq!(result, 15);
+    }
+
+    #[test]
+    fn over_and_underflow() {
+        let result = prepare_executed_program("+[+]-[-]").memory[0];
+        assert_eq!(result, 0);
+    }
 }
