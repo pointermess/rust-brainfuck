@@ -11,7 +11,8 @@ fn main() {
     bf.load_program("++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.");
     
     // fibonacci sequence - will run and calculate until stack overflow
-    //bf.load_program(">++++++++++>+>+[[+++++[>++++++++<-]>.<++++++[>--------<-]+<<<]>.>>[[-]<[>+<-]>>[<<+>+>-]<[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>[-]>+>+<<<-[>+<-]]]]]]]]]]]+>>>]<<<]");
+    // performs much longer if Interpreter is initialized with more than 256 bytes
+    // bf.load_program(">++++++++++>+>+[[+++++[>++++++++<-]>.<++++++[>--------<-]+<<<]>.>>[[-]<[>+<-]>>[<<+>+>-]<[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>[-]>+>+<<<-[>+<-]]]]]]]]]]]+>>>]<<<]");
     
     // some simple testing code
     //bf.load_program("+[->++++[-->++++<]]");
@@ -20,11 +21,15 @@ fn main() {
     //bf.load_program(">+++++++++[<++++++++>-]<."); // 0x48
     //bf.load_program("++++++++++++++++++++"); // just 20
 
+    // panic tests
+    //bf.load_program("-[-]"); // just 20
+
     // clear console
     print!("\x1B[2J");
 
     // run and print state after program has finished
-    // running (or stepping) will immediately
+    // running (or stepping) will immediately print out
+    // any '.' operations
     bf.run();
 
 
