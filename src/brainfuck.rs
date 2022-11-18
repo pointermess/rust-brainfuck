@@ -91,7 +91,7 @@ impl Interpreter {
 
     // moves memory pointer to the right
     fn move_right(&mut self) {
-        if self.memory_pointer < self.memory.len() {
+        if self.memory_pointer < self.memory.len() - 1 {
             self.memory_pointer += 1;
         } else {
             self.memory_pointer = 0;
@@ -223,6 +223,18 @@ mod tests {
     fn move_right() {
         let result = prepare_executed_program(">>>><<").memory_pointer;
         assert_eq!(result, 2);
+    }
+
+    #[test]
+    fn move_out_left() {
+        let interpreter = prepare_executed_program("<");
+        assert_eq!(interpreter.memory_pointer, interpreter.memory.len() - 1);
+    }
+
+    #[test]
+    fn move_out_right() {
+        let interpreter = prepare_executed_program("<>");
+        assert_eq!(interpreter.memory_pointer, 0);
     }
 
     #[test]
