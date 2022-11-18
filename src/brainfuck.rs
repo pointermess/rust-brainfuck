@@ -1,3 +1,5 @@
+use std::ops::Index;
+
 enum Operation {
     MoveLeft,
     MoveRight,
@@ -160,27 +162,25 @@ impl Interpreter {
 
         let code = self.program_code.iter().collect::<String>();
 
+        println!("Program Counter: {}", self.program_counter);
         println!("Program Code: {}", code);
 
         // display arrow at current program counter
-        // todo: handle multiple lines for bigger programs
         let mut str : String = " ".repeat(self.program_counter);
         str.push('^');
         println!("              {}", str);
 
 
-        println!("Program Counter: {}\n", self.program_counter);
 
         println!("---- MEM STATE ----");
+        
 
-        let mut c = 1;
-        for byte in &self.memory {
-            print!("{:02x} ", byte);
 
-            if c % 16 == 0 {
-                println!();
+        for chunk in self.memory.chunks(16) {
+            for byte in chunk {
+                print!("{:02x} ", byte);
             }
-            c += 1;
+            println!();
         }
 
         println!();
