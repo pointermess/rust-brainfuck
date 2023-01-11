@@ -15,7 +15,7 @@ fn main() {
     // initialized with only 256 bytes of memory - increase if more is needed
     let mut bf = Interpreter::new(256); 
 
-    // Hello World
+    // Hello World Example
     bf.load_program("++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.");
     
     // clear console
